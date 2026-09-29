@@ -1,0 +1,15 @@
+// Rule: <name>
+// ATT&CK: <technique ID>
+// Table: <table>
+// Logic: <one line on what this looks for and the threshold>
+//
+// While writing in the free Azure Data Explorer cluster, use the lab tables
+// (SigninLogs_Lab, SecurityEvent_Lab()). Switch to the real Sentinel table
+// names (SigninLogs, SecurityEvent) when you deploy in Phase 3.
+
+let lookback = 1h;
+<TableName>
+| where TimeGenerated > ago(lookback)
+// | where ...
+// | summarize ... by ...
+// | where <count> >= <threshold>

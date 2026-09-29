@@ -1,0 +1,4 @@
+signins_lab.csv
+*.zip
+__pycache__/
+.env

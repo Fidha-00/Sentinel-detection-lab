@@ -1,0 +1,21 @@
+# Copy this folder for each new rule, rename it, and fill in every field.
+name: ""                      # e.g. Password spray from a single IP
+description: ""               # What behaviour this detects, in one or two sentences
+mitre:
+  tactic: ""                  # e.g. Credential Access
+  technique_id: ""            # e.g. T1110.003
+  technique_name: ""          # e.g. Password Spraying
+severity: ""                  # Informational | Low | Medium | High
+data_source:
+  table: ""                   # e.g. SigninLogs
+  connector: ""               # e.g. Microsoft Entra ID
+schedule:
+  frequency: ""               # How often the rule runs, e.g. 15m
+  lookback: ""                # How far back it looks, e.g. 1h
+threshold: ""                 # e.g. >= 5 distinct users from one IP in 30 minutes
+entities:                     # Entities mapped in Sentinel
+  - ""                        # e.g. Account, IP, Host
+false_positives:
+  - ""                        # Known benign activity that could trigger this rule
+test_method: ""               # How it was validated, e.g. Atomic Red Team T1136.001 test 1
+status: draft                 # draft | tested | tuned

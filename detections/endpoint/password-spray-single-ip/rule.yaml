@@ -1,0 +1,20 @@
+name: Password Spray - Windows VM
+description: Detects one source IP producing failed Windows logons against many different accounts in a short window, which is the pattern of a password spray.
+mitre:
+  tactic: Credential Access
+  technique_id: T1110.003
+  technique_name: Password Spraying
+severity: Medium
+data_source:
+  table: SecurityEvent
+  connector: Windows Security Events via AMA (data collection rule, Event IDs 4624 and 4625)
+schedule:
+  frequency: 10m
+  lookback: 30m             # longer than frequency so late-ingested events are not missed
+threshold: ">= 3 distinct accounts failing from one IP within a 10-minute bin"
+entities:
+  - IP                      # source IP of the failed logons
+false_positives:
+  - ""                      # TODO: add what you observed or expect, e.g. a shared NAT or office IP, a mistyped service-account password
+test_method: Manual failed RDP logons against the test VM. Negative test - one account many times (did not fire). Positive test - several account names from one IP (fired).
+status: tested

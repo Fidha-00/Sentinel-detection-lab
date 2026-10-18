@@ -9,6 +9,10 @@ It contains normal sign-ins plus four planted attacks:
   3. Impossible travel - one user, two countries, minutes apart (T1078)
   4. Success after failures - brute force that works      (T1110)
 
+And one benign look-alike for testing false positives:
+  - Shared office IP - 6 staff mistype passwords behind one office IP,
+    while many staff sign in successfully from it every day
+
 All users, IPs and domains are fictional. Usage:
     python generate_signins.py            # writes signins_lab.csv
     python generate_signins.py --days 3 --seed 7
@@ -116,6 +120,34 @@ def attacks(start, days):
     return rows
 
 
+OFFICE_IP = ("49.37.200.1", "IN", "Thiruvananthapuram")
+
+
+def shared_office_ip(start, days):
+    """Benign activity that looks like a spray: a shared office/VPN IP.
+
+    Many staff sign in successfully from one office IP every day. One morning,
+    6 of them mistype their password within 20 minutes, then sign in fine.
+    A naive spray rule fires on this (6 distinct users failing from one IP);
+    a rule that compares failed users with successful users should not.
+    """
+    rows = []
+    ip, country, city = OFFICE_IP
+    office_staff = USERS[:12]
+    for day in range(days):
+        for user in office_staff:
+            ts = start + timedelta(days=day, hours=random.randint(3, 5), minutes=random.randint(0, 59))
+            rows.append(row(ts, user, ip, country, city, SUCCESS, "multiFactorAuthentication", "shared_office_ip"))
+
+    t = start + timedelta(days=days - 1, hours=4)
+    for user in office_staff[:6]:
+        t += timedelta(minutes=random.randint(1, 3))
+        rows.append(row(t, user, ip, country, city, BAD_PASSWORD, scenario="shared_office_ip"))
+        rows.append(row(t + timedelta(seconds=40), user, ip, country, city, SUCCESS,
+                        "multiFactorAuthentication", "shared_office_ip"))
+    return rows
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--days", type=int, default=3, help="days of normal activity (default 3)")
@@ -125,14 +157,18 @@ def main():
 
     random.seed(args.seed)
     start = (datetime.now(timezone.utc) - timedelta(days=args.days)).replace(hour=0, minute=0, second=0, microsecond=0)
-    rows = sorted(normal_activity(start, args.days) + attacks(start, args.days), key=lambda r: r["TimeGenerated"])
+    rows = sorted(
+        normal_activity(start, args.days) + attacks(start, args.days) + shared_office_ip(start, args.days),
+        key=lambda r: r["TimeGenerated"],
+    )
 
     with open(args.out, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDS)
         writer.writeheader()
         writer.writerows(rows)
 
-    attack_rows = sum(r["Scenario"] != "normal" for r in rows)
+    benign = ("normal", "shared_office_ip")
+    attack_rows = sum(r["Scenario"] not in benign for r in rows)
     print(f"Wrote {len(rows)} sign-ins ({attack_rows} attack rows) to {args.out}")
 
 

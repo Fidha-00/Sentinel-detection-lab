@@ -1,0 +1,14 @@
+// Rule: Password Spray - Windows VM
+// ATT&CK: T1110.003
+// Table: SecurityEvent
+// Logic: failed logons (4625, LogonType 3) from one source IP against 3 or more distinct accounts in a 10-minute bin.
+// The time window comes from the rule's lookback (30 minutes), so there is no ago() filter here.
+
+SecurityEvent
+| where EventID == 4625
+| where AccountType =~ "user"
+| where LogonType == 3
+| where isnotempty(IpAddress)
+| where IpAddress != "-"
+| summarize total_failure_count = count (), names = make_set(TargetUserName),number_of_failed_accounts = dcount(TargetUserName) by IpAddress, bin (TimeGenerated, 10m)
+| where number_of_failed_accounts >= 3
